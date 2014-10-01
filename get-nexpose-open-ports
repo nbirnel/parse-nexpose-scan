@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require 'resolv'
+
+re_time = '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2} '
+re_info = '\[INFO\] '
+re_thread = '\[Thread: Scan[^\]]*\] '
+re_site = '\[Site: [^\]]*\] \['
+re_ip = Resolv::IPv4::Regex.to_s
+re_ip = '(?<ip>[0-9.]+)'
+re_port = '(?<port>[0-9]+)'
+re_upd = 'UDP'
+re_tcp = 'TCP'
+re_type = '(?<type>(UDP|TCP))'
+re_open = '\] OPEN \(reason=.*'
+
+re_line = Regexp.new(re_time + re_info + re_thread + re_site + re_ip + ':' + re_port + '\/' + re_type + re_open) 
+
+open_ports = Hash.new
+
+while gets() do
+  line = $_.chomp
+  if re_line =~ line
+    match = Regexp.last_match
+    ip = $~[:ip]
+    port = $~[:port].to_i
+    type = $~[:type]
+    ip_type = "#{ip}-#{type}".to_sym
+
+    open_ports[ip_type] ||= Array.new
+    open_ports[ip_type] << port
+  end
+end
+
+open_ports.each do |ip_type, ports|
+  f_open_port = "#{ip_type}: #{ports.sort.uniq.join ','}"
+  puts f_open_port
+end
